@@ -21,6 +21,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -73,6 +74,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
+    private Button mEmailSignInButton;
     private View mProgressView;
     private View mLoginFormView;
     private CognitoCachingCredentialsProvider credentialsProvider;
@@ -98,11 +100,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                switchToMap(view);
+                switchToMain(view);
             }
         });
 
@@ -120,6 +122,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mapper = new DynamoDBMapper(ddbClient);
     }
 
+    public void switchToMain(View view) {
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+    }
+
     @DynamoDBTable(tableName = "BarPop-accounts-dummy")
     public class Account {
         private String username;
@@ -135,6 +142,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             this.username = username;
         }
 
+        @DynamoDBHashKey(attributeName="username")
         public String getUsername() {
             return this.username;
         }
@@ -176,6 +184,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         }
 
+        @DynamoDBAttribute(attributeName = "password")
         public String getPassword() {
             return this.password;
         }
@@ -183,6 +192,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         // Type can be either "hopper" or "owner"
         public void setType(String type) {
             this.type = type;
+        }
+
+        @DynamoDBAttribute(attributeName = "type")
+        public String getType() {
+            return this.type;
         }
     }
 
@@ -364,13 +378,16 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
+            Account account = mapper.load(Account.class, mEmail);
+            Log.d("BarPop: ", String.format("user: %s\npass: %s", account.getUsername(), account.getPassword()));
+
             try {
                 // Simulate network access.
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 return false;
             }
-            
+
             for (String credential : DUMMY_CREDENTIALS) {
                 String[] pieces = credential.split(":");
                 if (pieces[0].equals(mEmail)) {
@@ -390,6 +407,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (success) {
                 finish();
+                switchToMap(mEmailSignInButton);
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
