@@ -4,10 +4,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.service.autofill.Dataset;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
 
@@ -37,15 +33,21 @@ import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.mobileconnectors.cognito.CognitoSyncManager;
 import com.amazonaws.mobileconnectors.cognito.DefaultSyncCallback;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.*;
 import com.amazonaws.mobileconnectors.dynamodbv2.dynamodbmapper.*;
+import com.amazonaws.mobileconnectors.cognito.Dataset;
 
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -64,7 +66,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * TODO: remove after connecting to a real authentication system.
      */
     private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
+            "foo@bar.com:932b81ef8db2e65409b649fd9953cc49c284f75a211cd4bb6c1a3fe7d6ee10c24fef0302f8f458e4f4d34fbba6e221f0bc08e0ae131dc4c67fb155aa7003a6bd",
+            "user@bar.com:9192a64d78eacc4090abbcc2764101dbcfec55b26339c9c9678a2f1993e856bc235032b6e96bc9de3396bc4ca53112287e174e0e291885bc3b68710c1f7725fb"
     };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -80,6 +83,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private CognitoCachingCredentialsProvider credentialsProvider;
     private AmazonDynamoDBClient ddbClient;
     private DynamoDBMapper mapper;
+    private CognitoSyncManager syncClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,7 +108,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                switchToMain(view);
+                //switchToMain(view);
+                attemptLogin();
             }
         });
 
@@ -118,8 +123,38 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 Regions.US_EAST_2 // Region
         );
 
+        // Initialize the Cognito Sync client
+        syncClient = new CognitoSyncManager(
+                getApplicationContext(),
+                Regions.US_EAST_2, // Region
+                credentialsProvider);
+
+        // Create a record in a dataset and synchronize with the server
+        Dataset dataset = syncClient.openOrCreateDataset("myDataset");
+        dataset.put("myKey", "myValue");
+        dataset.synchronize(new DefaultSyncCallback() {
+            @Override
+            public void onSuccess(Dataset dataset, List newRecords) {
+                //Your handler code here
+            }
+        });
+
         ddbClient = new AmazonDynamoDBClient(credentialsProvider);
         mapper = new DynamoDBMapper(ddbClient);
+
+        CognitoUser  cognitoUser = new CognitoUser(credentialsProvider);
+
+        cognitoUser.getSessionInBackground(new AuthenticationHandler() {
+            @Override
+            public void onSuccess(CognitoUserSession session) {
+                String idToken = session.getIdToken().getJWTToken();
+
+                Map<String, String> logins = new HashMap<String, String>();
+                logins.put(cognito-idp.us-east-2.amazonaws.com/us-east-2_s13N8MJ23, session.getIdToken().getJWTToken());
+                credentialsProvider.setLogins(logins);
+            }
+
+        });
     }
 
     public void switchToMain(View view) {
@@ -218,13 +253,16 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
-        Account account = new Account(email, password);
 
         boolean cancel = false;
         View focusView = null;
 
         // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+        if (TextUtils.isEmpty(password)) {
+            mPasswordView.setError(getString(R.string.error_field_required));
+            focusView = mPasswordView;
+            cancel = true;
+        } else if (!isPasswordValid(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
@@ -374,9 +412,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
-            Account account = mapper.load(Account.class, mEmail);
-            Log.d("BarPop: ", String.format("user: %s\npass: %s", account.getUsername(), account.getPassword()));
-
             try {
                 // Simulate network access.
                 Thread.sleep(2000);
@@ -388,6 +423,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 String[] pieces = credential.split(":");
                 if (pieces[0].equals(mEmail)) {
                     // Account exists, return true if the password matches.
+
                     return pieces[1].equals(mPassword);
                 }
             }
