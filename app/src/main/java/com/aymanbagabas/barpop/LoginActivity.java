@@ -86,6 +86,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private AmazonDynamoDBClient ddbClient;
     private DynamoDBMapper mapper;
     private CognitoSyncManager syncClient;
+    private AuthHelper authHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -151,6 +152,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         ddbClient = new AmazonDynamoDBClient(credentialsProvider);
         mapper = new DynamoDBMapper(ddbClient);
+
+        authHelper = new AuthHelper(getBaseContext(), "us-east-2:3ff98a6f-db23-47a2-905b-16ac397378d3", "2vh33a0af73l6k6p85g30era40", "s11pi6l420b0npg6vp61c7dqkcg2f1sdnkas7q4dfgdjsmgrac9");
+    }
+
+    public AuthHelper getAuthHelper() {
+        return authHelper;
     }
 
     public void switchToMain(View view) {

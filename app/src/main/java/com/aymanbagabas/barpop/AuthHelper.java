@@ -1,6 +1,7 @@
 package com.aymanbagabas.barpop;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
@@ -27,12 +28,11 @@ public class AuthHelper {
 
             // Check if this user (cognitoUser) needs to be confirmed
             if(!userConfirmed) {
-                // This user must be confirmed and a confirmation code was sent to the user
-                // cognitoUserCodeDeliveryDetails will indicate where the confirmation code was sent
-                // Get the confirmation code from user
+                Log.d("SignUp: ", "Success");
             }
             else {
                 // The user has already been confirmed
+                Log.d("SignUp: ", "Success");
             }
         }
 
@@ -53,8 +53,8 @@ public class AuthHelper {
         return userPool;
     }
 
-    public void setUserAttribute(String attribute, String value) {
-        userAttributes.addAttribute(attribute, value);
+    public CognitoUserAttributes getUserAttributes() {
+        return userAttributes;
     }
 
     public SignUpHandler getSignupCallback() {
