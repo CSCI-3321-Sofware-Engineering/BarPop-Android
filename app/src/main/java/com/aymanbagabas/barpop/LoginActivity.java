@@ -36,6 +36,7 @@ import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.*;
 import com.amazonaws.mobileconnectors.dynamodbv2.dynamodbmapper.*;
@@ -78,6 +79,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
     private Button mEmailSignInButton;
+    private Button mSignUpButton;
     private View mProgressView;
     private View mLoginFormView;
     private CognitoCachingCredentialsProvider credentialsProvider;
@@ -113,6 +115,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
+        mSignUpButton = (Button) findViewById(R.id.register);
+        mSignUpButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switchToSignUp(view);
+            }
+        });
+
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
 
@@ -141,20 +151,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         ddbClient = new AmazonDynamoDBClient(credentialsProvider);
         mapper = new DynamoDBMapper(ddbClient);
-
-        CognitoUser  cognitoUser = new CognitoUser(credentialsProvider);
-
-        cognitoUser.getSessionInBackground(new AuthenticationHandler() {
-            @Override
-            public void onSuccess(CognitoUserSession session) {
-                String idToken = session.getIdToken().getJWTToken();
-
-                Map<String, String> logins = new HashMap<String, String>();
-                logins.put(cognito-idp.us-east-2.amazonaws.com/us-east-2_s13N8MJ23, session.getIdToken().getJWTToken());
-                credentialsProvider.setLogins(logins);
-            }
-
-        });
     }
 
     public void switchToMain(View view) {
@@ -162,79 +158,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         startActivity(intent);
     }
 
-    @DynamoDBTable(tableName = "BarPop-accounts-dummy")
-    public class Account {
-        private String username;
-        private String password;
-        private String type;
-
-        public Account(String username, String password) {
-            setUsername(username);
-            setPassword(password);
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        @DynamoDBHashKey(attributeName="username")
-        public String getUsername() {
-            return this.username;
-        }
-
-        // Create a salt by using the username md5 and shifting each character by 4
-        private String getSalt() throws NoSuchAlgorithmException, DigestException {
-
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(this.username.getBytes());
-            StringBuffer md5user = new StringBuffer();
-            for (byte b: md.digest()) {
-                md5user.append(String.format("%02x", b & 0xff));
-            }
-            StringBuffer saltedUser = new StringBuffer();
-            for (char c: md5user.toString().toCharArray()) {
-                saltedUser.append((char)((int)c + 4));
-            }
-            return saltedUser.toString();
-        }
-
-        // The password is the original password + getSalt() all hashed using SHA-512
-        public void setPassword(String password) {
-            try {
-                MessageDigest md = MessageDigest.getInstance("SHA-512");
-                md.update((password + getSalt()).getBytes());
-                StringBuffer sha = new StringBuffer();
-                for (byte b : md.digest()) {
-                    sha.append(String.format("%02x", b & 0xff));
-                }
-                this.password = sha.toString();
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch (DigestException e) {
-                e.printStackTrace();
-            }
-            // Fallback to the original password if fails
-            if (this.password == null || this.password.isEmpty()) {
-                this.password = password;
-            }
-        }
-
-        @DynamoDBAttribute(attributeName = "password")
-        public String getPassword() {
-            return this.password;
-        }
-
-        // Type can be either "hopper" or "owner"
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        @DynamoDBAttribute(attributeName = "type")
-        public String getType() {
-            return this.type;
-        }
+    public void switchToSignUp(View view) {
+        Intent intent = new Intent(this, SignUpActivity.class);
+        startActivity(intent);
     }
-
 
     /**
      * Attempts to sign in or register the account specified by the login form.
@@ -403,9 +330,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         private final String mPassword;
 
         UserLoginTask(String email, String password) {
-            Account account = new Account(email, password);
-            mEmail = account.getUsername();
-            mPassword = account.getPassword();
+            mEmail = email;
+            mPassword = password;
         }
 
         @Override
