@@ -29,7 +29,7 @@
     </FrameLayout>
 
     <ProgressBar
-        android:id="@+id/login_progress"
+        android:id="@+id/signup_progress"
         style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -42,7 +42,7 @@
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/email_login_form"
+            android:id="@+id/sign_up_form"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -81,7 +81,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ems="10"
-                    android:hint="mm/dd/yyyy"
+                    android:focusable="false"
+                    android:hint="Birthdate"
                     android:inputType="date" />
             </android.support.design.widget.TextInputLayout>
 
@@ -109,10 +110,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Password"
-                    android:imeActionId="@+id/login"
-                    android:imeActionLabel="@string/action_sign_in_short"
                     android:imeOptions="actionUnspecified"
-                    android:inputType="textCapSentences|textPassword"
+                    android:inputType="textPassword"
                     android:maxLines="1"
                     android:singleLine="true" />
 

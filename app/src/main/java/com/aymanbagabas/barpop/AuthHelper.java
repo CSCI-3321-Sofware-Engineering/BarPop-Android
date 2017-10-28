@@ -28,7 +28,7 @@ public class AuthHelper {
 
             // Check if this user (cognitoUser) needs to be confirmed
             if(!userConfirmed) {
-                Log.d("SignUp: ", "Success");
+                Log.d("SignUp: ", "Success - need verification");
             }
             else {
                 // The user has already been confirmed
@@ -39,13 +39,15 @@ public class AuthHelper {
         @Override
         public void onFailure(Exception exception) {
             // Sign-up failed, check exception for the cause
+
+            Log.d("SignUp: ", "Failed");
         }
     };
 
     AuthHelper(Context context, String poolId, String clientId, String clientSecret) {
         clientConfiguration = new ClientConfiguration();
         // Create a CognitoUserPool object to refer to your user pool
-        userPool = new CognitoUserPool(context, poolId, clientId, clientSecret, clientConfiguration);
+        userPool = new CognitoUserPool(context, poolId, clientId, clientSecret);
         userAttributes = new CognitoUserAttributes();
     }
 
