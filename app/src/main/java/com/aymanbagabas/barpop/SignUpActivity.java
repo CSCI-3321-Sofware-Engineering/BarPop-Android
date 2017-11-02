@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -107,12 +108,15 @@ public class SignUpActivity extends AppCompatActivity {
             }
         });
 
+
+
         AmazonCognitoIdentityProviderClient identityProviderClient = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), new ClientConfiguration());
         identityProviderClient.setRegion(Region.getRegion(Regions.US_EAST_2));
 
         userPool = new CognitoUserPool(getBaseContext(), POOL_ID, CLIENT_ID, CLIENT_SECRET, identityProviderClient);
 
     }
+
 
     private void attemptSignUp() {
         String firstName = firstView.getText().toString();
@@ -204,6 +208,9 @@ public class SignUpActivity extends AppCompatActivity {
 
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
+        //check password for one special character and one uppercase letter
+        //currently causes an error that makes it seem like everything was entered correctly but it
+        //will not update the database because of an invalid entry
         return password.length() > 7;
     }
 
