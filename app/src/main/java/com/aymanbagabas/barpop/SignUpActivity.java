@@ -204,7 +204,22 @@ public class SignUpActivity extends AppCompatActivity {
 
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
-        return password.length() > 7;
+        boolean foundUpper = false;
+        boolean foundLower = false;
+        boolean foundNumber = false;
+        for (int i = 1; i < password.length(); i++) {
+            char ch = password.charAt(i);
+            if (Character.isUpperCase(ch)) {
+                foundUpper = true;
+            }
+            if (Character.isLowerCase(ch)) {
+                foundLower = true;
+            }
+            if (Character.isDigit(ch)) {
+                foundNumber = true;
+            }
+        }
+        return password.length() > 7 && foundLower && foundUpper && foundNumber;
     }
 
     private void updateLabel(Calendar calendar) {
