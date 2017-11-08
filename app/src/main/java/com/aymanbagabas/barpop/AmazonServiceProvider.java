@@ -1,27 +1,58 @@
 package com.aymanbagabas.barpop;
 
+import android.content.Context;
 import android.net.NetworkRequest;
 import android.os.Build;
 import android.support.v4.*;
+
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AnonymousAWSCredentials;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProviderClient;
 
 /**
  * Created by matt on 11/8/2017.
  */
 
  public class AmazonServiceProvider extends ServiceProvider {
-    final String POOL_ID = "us-east-2_vi5leiwG4";
-    final String CLIENT_ID = "2vh33a0af73l6k6p85g30era40";
-    final String CLIENT_SECRET = "s11pi6l420b0npg6vp61c7dqkcg2f1sdnkas7q4dfgdjsmgrac9";
-     AmazonServiceProvider(String clientId,String CLIENT_ID, String CLIENT_SECRET){
-
+    String pool_id;
+    String client_id;
+    String client_secret;
+    private CognitoUserPool userPool;
+    private Context  context;
+    AmazonServiceProvider(String poolId, String client_id, String client_secret){
+         setPoolId(poolId);
+         setClientId(client_id);
+         setClientSecret(client_secret);
     }
     @Override
     public void login() {
 
     }
 
+    public void setContext(Context context) {
+       this.context = context;
+    }
+    public void setPoolId(String poolId) {
+        this.pool_id = poolId;
+    }
+
+    public void setClientId(String clientId) {
+        this.client_id = clientId;
+    }
+    public  void setClientSecret(String clientSecret) {
+        this.client_secret = clientSecret;
+    }
+
     @Override
     public void signUp() {
+       AmazonCognitoIdentityProviderClient identityProviderClient = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), new ClientConfiguration());
+       identityProviderClient.setRegion(Region.getRegion(Regions.US_EAST_2));
 
+       userPool = new CognitoUserPool(context, pool_id, client_id, client_secret, identityProviderClient);
     }
+
 }
+

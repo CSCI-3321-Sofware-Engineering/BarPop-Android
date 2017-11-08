@@ -110,10 +110,14 @@ public class SignUpActivity extends AppCompatActivity {
 
 
 
-        AmazonCognitoIdentityProviderClient identityProviderClient = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), new ClientConfiguration());
+        /*AmazonCognitoIdentityProviderClient identityProviderClient = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), new ClientConfiguration());
         identityProviderClient.setRegion(Region.getRegion(Regions.US_EAST_2));
 
         userPool = new CognitoUserPool(getBaseContext(), POOL_ID, CLIENT_ID, CLIENT_SECRET, identityProviderClient);
+
+        AmazonServiceProvider amazonServiceProvider = new AmazonServiceProvider();
+        */
+
 
     }
 
