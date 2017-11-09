@@ -39,6 +39,7 @@ import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvi
     private Context context;
     private AmazonCognitoIdentityProviderClient identityProviderClient;
     private AuthenticationHandler authHandler;
+
     private SignUpHandler signupCallback = new SignUpHandler() {
 
         @Override
@@ -123,6 +124,7 @@ import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvi
     }
 
 
+    //get signup informaiton and call the sign up function
     @Override
     public void signUp(Account account) {
         String email = account.getEmail();
@@ -139,6 +141,6 @@ import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvi
 
         userPool.signUpInBackground(email, password, cognitoUserAttributes, null, signupCallback);
     }
-
 }
+
 

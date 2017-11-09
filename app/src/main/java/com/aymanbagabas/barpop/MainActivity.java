@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity
                 // All location settings are satisfied. The client can initialize
                 // location requests here.
                 // ...
+
                 mRequestingLocationUpdates = true;
             }
         });
