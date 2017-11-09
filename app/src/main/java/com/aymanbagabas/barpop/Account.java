@@ -12,53 +12,32 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
  * Created by matt on 11/8/2017.
  */
 
-public class Account  {
-    private View signUpProgress;
-    private View signUpForm;
-    private EditText firstView;
-    private EditText lastView;
-    private EditText emailView;
-    private EditText passwordView;
-    private EditText dateView;
-    private Button signUpButton;
-    private RadioGroup genderViewGroup;
-    private RadioButton male;
-    private RadioButton female;
-    private AuthHelper authHelper;
-    private CognitoUserPool userPool;
+public class Account {
 
-    String firstName = firstView.getText().toString();
-    String lastName = lastView.getText().toString();
-    String fullName = String.format("%s %s", firstName, lastName);
-    String gender = "";
-    String email = emailView.getText().toString();
-    String password = passwordView.getText().toString();
-    String birthdate = dateView.getText().toString();
+    private String name;
+    private String gender;
+    private String email;
+    private String password;
+    private String birthdate;
 
+    public Account() {}
 
-    //getters and setters
-    public View getSignUpProgress() {
-        return signUpProgress;
+    public Account(String email, String password) {
+        this.email = email;
+        this.password = password;
     }
 
-    public void setSignUpProgress(View signUpProgress) {
-        this.signUpProgress = signUpProgress;
+    public Account(String email, String password, String name, String gender, String dateOfBirth) {
+        this(email, password);
+        setName(name); setGender(gender); setBirthdate(dateOfBirth);
     }
 
-    public String getLastName() {
-        return lastName;
+    public String getName() {
+        return name;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getGender() {
@@ -91,14 +70,6 @@ public class Account  {
 
     public void setBirthdate(String birthdate) {
         this.birthdate = birthdate;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
     }
 
 

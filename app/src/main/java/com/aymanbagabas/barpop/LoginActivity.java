@@ -33,8 +33,13 @@ import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.mobileconnectors.cognito.CognitoSyncManager;
 import com.amazonaws.mobileconnectors.cognito.DefaultSyncCallback;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationContinuation;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationDetails;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.ChallengeContinuation;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.MultiFactorAuthenticationContinuation;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler;
 import com.amazonaws.regions.Regions;
@@ -58,19 +63,6 @@ import static android.Manifest.permission.READ_CONTACTS;
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     /**
-     * Id to identity READ_CONTACTS permission request.
-     */
-    private static final int REQUEST_READ_CONTACTS = 0;
-
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@bar.com:932b81ef8db2e65409b649fd9953cc49c284f75a211cd4bb6c1a3fe7d6ee10c24fef0302f8f458e4f4d34fbba6e221f0bc08e0ae131dc4c67fb155aa7003a6bd",
-            "user@bar.com:9192a64d78eacc4090abbcc2764101dbcfec55b26339c9c9678a2f1993e856bc235032b6e96bc9de3396bc4ca53112287e174e0e291885bc3b68710c1f7725fb"
-    };
-    /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
     private UserLoginTask mAuthTask = null;
@@ -87,6 +79,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private DynamoDBMapper mapper;
     private CognitoSyncManager syncClient;
     private AuthHelper authHelper;
+    private ServiceProvider serviceProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,7 +104,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                //switchToMain(view);
                 attemptLogin();
             }
         });
@@ -126,6 +118,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        /*
 
         // Initialize the Amazon Cognito credentials provider
         credentialsProvider = new CognitoCachingCredentialsProvider(
@@ -154,13 +148,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mapper = new DynamoDBMapper(ddbClient);
 
         authHelper = new AuthHelper(getBaseContext(), "us-east-2:3ff98a6f-db23-47a2-905b-16ac397378d3", "2vh33a0af73l6k6p85g30era40", "s11pi6l420b0npg6vp61c7dqkcg2f1sdnkas7q4dfgdjsmgrac9");
+        */
+        initServiceProvider();
     }
 
-    public AuthHelper getAuthHelper() {
-        return authHelper;
+    void initServiceProvider() {
+        final String poolId = BuildConfig.amazon_pool_id;
+        final String clientId = BuildConfig.amazon_client_id;
+        final String clientSecret = BuildConfig.amazon_client_secret;
+        serviceProvider = new AmazonServiceProvider(getApplicationContext(), poolId, clientId, clientSecret);
     }
 
-    public void switchToMain(View view) {
+    public void switchToMain() {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
@@ -221,7 +220,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
+            mAuthTask = new UserLoginTask(new Account(email, password));
             mAuthTask.execute((Void) null);
         }
     }
@@ -232,8 +231,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
-        return password.length() > 7;
+        boolean foundUpper = false; boolean foundLower = false; boolean foundDigit = false;
+        for(int i = 0; i < password.length(); i++) {
+            char ch = password.charAt(i);
+            if (Character.isUpperCase(ch)) foundUpper = true;
+            if (Character.isLowerCase(ch)) foundLower = true;
+            if (Character.isDigit(ch)) foundDigit = true;
+        }
+
+        return password.length() > 7 && foundDigit && foundLower && foundUpper;
     }
 
     /**
@@ -307,15 +313,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     }
 
-    private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
-        //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(LoginActivity.this,
-                        android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
-
-        mEmailView.setAdapter(adapter);
-    }
-
 
     private interface ProfileQuery {
         String[] PROJECTION = {
@@ -333,32 +330,60 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
-        private final String mEmail;
-        private final String mPassword;
+        private final Account account;
 
-        UserLoginTask(String email, String password) {
-            mEmail = email;
-            mPassword = password;
+        UserLoginTask(Account account) {
+            this.account = account;
         }
 
         @Override
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
+            AuthenticationHandler authHandler = new AuthenticationHandler() {
+
+                @Override
+                public void onSuccess(CognitoUserSession userSession, CognitoDevice newDevice) {
+                    Log.d("-- Login", "Success ");
+                    switchToMain();
+                }
+
+                @Override
+                public void getAuthenticationDetails(AuthenticationContinuation authenticationContinuation, String username) {
+                    // The API needs user sign-in credentials to continue
+                    AuthenticationDetails authenticationDetails = new AuthenticationDetails(account.getEmail(), account.getPassword(), null);
+
+                    // Pass the user sign-in credentials to the continuation
+                    authenticationContinuation.setAuthenticationDetails(authenticationDetails);
+
+                    // Allow the sign-in to continue
+                    authenticationContinuation.continueTask();
+                }
+
+                @Override
+                public void getMFACode(MultiFactorAuthenticationContinuation continuation) {
+
+                }
+
+                @Override
+                public void authenticationChallenge(ChallengeContinuation continuation) {
+
+                }
+
+                @Override
+                public void onFailure(Exception exception) {
+                    // Sign-in failed, check exception for the cause
+                    Log.d("-- Login", "failed " + exception.getMessage());
+                }
+            };
+            ((AmazonServiceProvider)serviceProvider).setAuthHandler(authHandler);
+            serviceProvider.login(account);
+
             try {
                 // Simulate network access.
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 return false;
-            }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-
-                    return pieces[1].equals(mPassword);
-                }
             }
 
             // TODO: register the new account here.

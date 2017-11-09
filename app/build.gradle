@@ -10,13 +10,15 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "amazon_pool_id", (project.findProperty("AMAZON_POOL_ID") ?: ""))
+        buildConfigField("String", "amazon_client_id", (project.findProperty("AMAZON_CLIENT_ID") ?: ""))
+        buildConfigField("String", "amazon_client_secret", (project.findProperty("AMAZON_CLIENT_SECRET") ?: ""))
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             resValue "string", "google_maps_key", (project.findProperty("GOOGLE_MAPS_API_KEY") ?: "")
-
         }
     }
 }
@@ -33,7 +35,7 @@ dependencies {
     compile 'com.amazonaws:aws-android-sdk-core:2.6.+'
     compile 'com.amazonaws:aws-android-sdk-s3:2.6.+'
     compile 'com.amazonaws:aws-android-sdk-ddb:2.6.+'
-    compile 'com.amazonaws:aws-android-sdk-ddb-mapper:2.6.+'
+    compile 'com.amazonaws:aws-android-sdk-ddb-mapper:2.6.6'
     compile 'com.amazonaws:aws-android-sdk-cognito:2.6.+'
     compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.6.3+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'

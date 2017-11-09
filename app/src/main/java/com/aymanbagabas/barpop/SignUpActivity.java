@@ -42,10 +42,6 @@ import java.util.Locale;
 
 public class SignUpActivity extends AppCompatActivity {
 
-    final String POOL_ID = "us-east-2_vi5leiwG4";
-    final String CLIENT_ID = "2vh33a0af73l6k6p85g30era40";
-    final String CLIENT_SECRET = "s11pi6l420b0npg6vp61c7dqkcg2f1sdnkas7q4dfgdjsmgrac9";
-
     private UserSignUpTask signUpTask = null;
 
     private View signUpProgress;
@@ -61,6 +57,8 @@ public class SignUpActivity extends AppCompatActivity {
     private RadioButton female;
     private AuthHelper authHelper;
     private CognitoUserPool userPool;
+
+    private ServiceProvider serviceProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,11 +112,18 @@ public class SignUpActivity extends AppCompatActivity {
         identityProviderClient.setRegion(Region.getRegion(Regions.US_EAST_2));
 
         userPool = new CognitoUserPool(getBaseContext(), POOL_ID, CLIENT_ID, CLIENT_SECRET, identityProviderClient);
+
+        AmazonServiceProvider amazonServiceProvider = new AmazonServiceProvider();
         */
-        AmazonServiceProvider amazonServiceProvider = new AmazonServiceProvider(POOL_ID,CLIENT_ID,CLIENT_SECRET);
+        initServiceProvider();
 
+    }
 
-
+    void initServiceProvider() {
+        final String poolId = BuildConfig.amazon_pool_id;
+        final String clientId = BuildConfig.amazon_client_id;
+        final String clientSecret = BuildConfig.amazon_client_secret;
+        serviceProvider = new AmazonServiceProvider(getApplicationContext(), poolId, clientId, clientSecret);
     }
 
 
@@ -200,7 +205,7 @@ public class SignUpActivity extends AppCompatActivity {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            signUpTask = new SignUpActivity.UserSignUpTask(email, password, gender, birthdate, fullName);
+            signUpTask = new SignUpActivity.UserSignUpTask(new Account(email, password, fullName, gender, birthdate));
             signUpTask.execute((Void) null);
         }
     }
@@ -211,11 +216,15 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
-        //check password for one special character and one uppercase letter
-        //currently causes an error that makes it seem like everything was entered correctly but it
-        //will not update the database because of an invalid entry
-        return password.length() > 7;
+        boolean foundUpper = false; boolean foundLower = false; boolean foundDigit = false;
+        for(int i = 0; i < password.length(); i++) {
+            char ch = password.charAt(i);
+            if (Character.isUpperCase(ch)) foundUpper = true;
+            if (Character.isLowerCase(ch)) foundLower = true;
+            if (Character.isDigit(ch)) foundDigit = true;
+        }
+
+        return password.length() > 7 && foundDigit && foundLower && foundUpper;
     }
 
     private void updateLabel(Calendar calendar) {
@@ -260,60 +269,17 @@ public class SignUpActivity extends AppCompatActivity {
 
     public class UserSignUpTask extends AsyncTask<Void, Void, Boolean> {
 
-        private final String name;
-        private final String gender;
-        private final String birthdate;
-        private final String email;
-        private final String password;
+        private final Account account;
 
-        UserSignUpTask(String email, String password, String gender, String birthdate, String name) {
-            this.name = name;
-            this.gender = gender;
-            this.birthdate = birthdate;
-            this.email = email;
-            this.password = password;
+        UserSignUpTask(Account account) {
+            this.account = account;
         }
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
             boolean auth = false;
 
-            SignUpHandler signupCallback = new SignUpHandler() {
-
-                @Override
-                public void onSuccess(CognitoUser cognitoUser, boolean userConfirmed,
-                                      CognitoUserCodeDeliveryDetails cognitoUserCodeDeliveryDetails) {
-                    // Sign-up was successful
-
-                    // Check if this user (cognitoUser) needs to be confirmed
-                    if(!userConfirmed) {
-                        CognitoUser user = userPool.getCurrentUser();
-                        Log.d("User: ", user.toString());
-                        Log.d("SignUp: ", "Success - need verification");
-                    }
-                    else {
-                        // The user has already been confirmed
-                        Log.d("SignUp: ", "Success");
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception exception) {
-                    // Sign-up failed, check exception for the cause
-
-                    Log.d("SignUp: ", "Failed");
-                    Log.d("SignUp: ", exception.toString());
-                }
-            };
-
-            CognitoUserAttributes cognitoUserAttributes = new CognitoUserAttributes();
-            cognitoUserAttributes.addAttribute("name", name);
-            cognitoUserAttributes.addAttribute("email", email);
-            cognitoUserAttributes.addAttribute("gender", gender);
-            cognitoUserAttributes.addAttribute("birthdate", birthdate);
-
-            userPool.signUpInBackground(email, password, cognitoUserAttributes, null, signupCallback);
+            ((AmazonServiceProvider)serviceProvider).signUp(account);
 
             try {
                 // Simulate network access.
@@ -334,8 +300,7 @@ public class SignUpActivity extends AppCompatActivity {
             if (success) {
                 finish();
             } else {
-                passwordView.setError(getString(R.string.error_incorrect_password));
-                passwordView.requestFocus();
+                serviceProvider.onSignUpSuccess();
             }
         }
 
