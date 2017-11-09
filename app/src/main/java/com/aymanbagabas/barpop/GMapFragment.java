@@ -17,6 +17,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -78,8 +79,19 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback {
                 });
     }
 }
-// class MapsMarkerActivity extends AppCompatActivity implements OnMapReadyCallback {
+// public class MapsMarkerActivity extends AppCompatActivity implements OnMapReadyCallback {
 //    // Include the OnCreate() method here too, as described above.
+//@Override
+//protected void onCreate(Bundle savedInstanceState) {
+//    super.onCreate(savedInstanceState);
+//    // Retrieve the content view that renders the map.
+//    setContentView(R.layout.activity_maps);
+//    // Get the SupportMapFragment and request notification
+//    // when the map is ready to be used.
+//    SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+//            .findFragmentById(R.id.googleMap);
+//    mapFragment.getMapAsync(this);
+//}
 //    @Override
 //    public void onMapReady(GoogleMap googleMap) {
 //        // Add a marker in Sydney, Australia,
