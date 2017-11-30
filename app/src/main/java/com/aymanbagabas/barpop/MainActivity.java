@@ -2,7 +2,6 @@ package com.aymanbagabas.barpop;
 
 import android.Manifest;
 import android.app.FragmentManager;
-import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -224,8 +223,8 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_map) {
             fm.beginTransaction().replace(R.id.content_frame, new GMapFragment()).commit();
-        } else if (id == R.id.nav_camera) {
-
+        } else if (id == R.id.nav_nearby) {
+            //fm.beginTransaction().replace(R.id.content_frame, new NearbyFragment()).commit();
         } else if (id == R.id.nav_manage) {
 
         } else if (id == R.id.nav_share) {

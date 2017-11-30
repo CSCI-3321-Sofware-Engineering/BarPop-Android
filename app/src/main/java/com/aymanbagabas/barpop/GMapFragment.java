@@ -18,10 +18,16 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class GMapFragment extends Fragment implements OnMapReadyCallback {
@@ -47,7 +53,7 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     @Override
-    public void onMapReady( GoogleMap googleMap) {
+    public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
 
@@ -77,6 +83,40 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback {
                         }
                     }
                 });
+        // Add sample locations
+        prototype(mMap);
+    }
+
+    private void prototype(GoogleMap map) {
+
+        ArrayList<String> placesNames = new ArrayList<>();
+        placesNames.add("Congress Street Social Club");
+        placesNames.add("Club Elan");
+        placesNames.add("Wet Willie's");
+        placesNames.add("Club 51 Degrees");
+        placesNames.add("El-Rocko Lounge");
+        ArrayList<LatLng> placesLocations = new ArrayList<>();
+        placesLocations.add(new LatLng(32.080859, -81.096605));
+        placesLocations.add(new LatLng(32.082420, -81.094509));
+        placesLocations.add(new LatLng(32.080966, -81.094771));
+        placesLocations.add(new LatLng(32.079899, -81.093446));
+        placesLocations.add(new LatLng(32.078666, -81.093394));
+
+        for (int i = 0; i < placesNames.size(); i++) {
+            int population = (int)(Math.random() * 100);
+            BitmapDescriptor color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
+            if (population < 30)
+                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW);
+            else if (population <= 60)
+                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
+
+            map.addMarker(new MarkerOptions()
+                    .position(placesLocations.get(i))
+                    .title(placesNames.get(i))
+                    .snippet(String.format("Population: %d", population))
+                    .icon(color)
+            );
+        }
     }
 }
 // public class MapsMarkerActivity extends AppCompatActivity implements OnMapReadyCallback {
